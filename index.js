@@ -68,7 +68,7 @@ app.post("/login", async (req, res) => {
 
 app.post("/forget-password", async (req, res) => { 
     try {
-        console.log(req.body)
+        
         const { email } = req.body
         const connection = await MongoClient.connect(URL)
         const db = connection.db("users")
@@ -95,6 +95,7 @@ app.post("/forget-password", async (req, res) => {
                 user: "dnelsona@outlook.com",
                 pass: process.env.OUTLOOK_PASSWORD,
             },
+            logger:true
 
         });
         const main = async () => {
@@ -117,6 +118,7 @@ app.post("/forget-password", async (req, res) => {
         console.log(error)
     }
 })
+
 app.post("/reset-password/:token", async (req, res) => {
  try {
     const { password, confirmPassword } = req.body

@@ -1,0 +1,74 @@
+const express = require('express');
+const bcrypt = require('bcryptjs');
+const jsonwebtoken = require('jsonwebtoken');;
+const cors = require('cors');
+const dotenv = require('dotenv').config();
+const { MongoClient, ObjectId } = require('mongodb')
+const app = express();
+const URL = process.env.DB
+const secretKey = process.env.JWT_SECRET
+const PORT = 4000;
+app.use(express.json());
+app.use(cors({
+    origin: '*'
+}));
+
+app.get('/', (req, res) => {
+    res.send(`<h1> server checking route </h1>`)
+})
+
+app.post('/register', async (req, res) => {
+    try {
+        const { firstName, lastName, email, password, confirmPassword } = req.body
+        if (!firstName || !lastName || !email || !password || !confirmPassword) {
+            return res.status(400).json({ message: 'Please provide all required fields.' });
+        }
+        if (password !== confirmPassword) {
+            return res.status(400).json({ message: 'Passwords do not match.' });
+        }
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const connection = await MongoClient.connect(URL)
+        const db = connection.db("users")
+        const newUser = {
+            firstName,
+            lastName,
+            email,
+            password: hashedPassword,
+        }
+        const result = await db.collection("Registered").insertOne(newUser)
+        const token = jsonwebtoken.sign({ userId: result.insertedId }, secretKey, { expiresIn: '1h' });
+        res.status(201).json({ message: 'Registration successful', token });
+        connection.close()
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'Internal Server Error' });
+
+    }
+})
+app.post("/login", async (req, res) => {
+    try {
+        const { email, password } = req.body
+        if (!email || !password) {
+            return res.status(400).json({ message: 'Please provide email and password.' });
+        }
+        const connection = await MongoClient.connect(URL)
+        const db = connection.db("users")
+        const user = await db.collection("Registered").findOne({ email })
+
+        if (!user) {
+            res.status(404).json({ message: "User not match" })
+        }
+        const passwordValid = await bcrypt.compare(password, user.password)
+        if (!passwordValid) {
+            res.status(404).json({ message: "password not match" })
+        }
+        const token = jsonwebtoken.sign({ userId: user._id }, secretKey, { expiresIn: "1h" })
+        res.status(200).json({ message: 'Login successful', token });
+        connection.close()
+    } catch (error) {
+
+    }
+})
+app.listen(PORT, () => {
+    console.log(`server started at http://localhost:${PORT} ...`);
+})

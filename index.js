@@ -33,7 +33,7 @@ app.post('/register', async (req, res) => {
         }
         const result = await db.collection("Registered").insertOne(newUser)
         const token = jsonwebtoken.sign({ userId: result.insertedId }, secretKey, { expiresIn: '1h' });
-        res.status(201).json({ message: 'Registration successful', newUser,token });
+        res.status(201).json({ message: 'Registration successful', newUser, token });
         connection.close()
     } catch (error) {
         console.log(error);
@@ -66,9 +66,9 @@ app.post("/login", async (req, res) => {
     }
 })
 
-app.post("/forget-password", async (req, res) => { 
+app.post("/forget-password", async (req, res) => {
     try {
-        
+
         const { email } = req.body
         const connection = await MongoClient.connect(URL)
         const db = connection.db("users")
@@ -86,7 +86,6 @@ app.post("/forget-password", async (req, res) => {
         })
         connection.close()
 
-
         const transporter = nodemailer.createTransport({
             host: "smtp.office365.com",
             port: 587,
@@ -95,7 +94,9 @@ app.post("/forget-password", async (req, res) => {
                 user: "dnelsona@outlook.com",
                 pass: process.env.OUTLOOK_PASSWORD,
             },
-            logger:true
+            tls: {
+                ciphers: 'SSLv3',
+            },
 
         });
         const main = async () => {
@@ -120,25 +121,25 @@ app.post("/forget-password", async (req, res) => {
 })
 
 app.post("/reset-password/:token", async (req, res) => {
- try {
-    const { password, confirmPassword } = req.body
-    const token = req.params.token
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const connection = await MongoClient.connect(URL)
-    const db = connection.db("users")
-    const user = await db.collection("Registered").findOne({ token :token})
+    try {
+        const { password, confirmPassword } = req.body
+        const token = req.params.token
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const connection = await MongoClient.connect(URL)
+        const db = connection.db("users")
+        const user = await db.collection("Registered").findOne({ token: token })
 
-    await db.collection("Registered").updateOne({ token }, {
-        $set: {
-            password : hashedPassword,
-            confirmPassword:hashedPassword
-        }
-    })
-   connection.close()
-   res.send({message:"Password changed succesfully",user})
- } catch (error) {
-    console.log(error)
- }
+        await db.collection("Registered").updateOne({ token }, {
+            $set: {
+                password: hashedPassword,
+                confirmPassword: hashedPassword
+            }
+        })
+        connection.close()
+        res.send({ message: "Password changed succesfully", user })
+    } catch (error) {
+        console.log(error)
+    }
 
 })
 app.listen(PORT, () => {

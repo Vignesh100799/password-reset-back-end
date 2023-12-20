@@ -88,10 +88,10 @@ app.post("/forget-password", async (req, res) => {
 
         const transporter = nodemailer.createTransport({
             host: "smtp.office365.com",
-            port: 587,
+            port: process.env.PORT,
             secure: false,
             auth: {
-                user: "dnelsona@outlook.com",
+                user: process.env.mail,
                 pass: process.env.OUTLOOK_PASSWORD,
             },
             tls: {

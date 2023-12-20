@@ -87,7 +87,7 @@ app.post("/forget-password", async (req, res) => {
         connection.close()
 
         const transporter = nodemailer.createTransport({
-            host: "smtp.office365.com",
+            host: process.env.host,
             port: process.env.PORT,
             secure: false,
             auth: {

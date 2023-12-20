@@ -33,7 +33,7 @@ app.post('/register', async (req, res) => {
         }
         const result = await db.collection("Registered").insertOne(newUser)
         const token = jsonwebtoken.sign({ userId: result.insertedId }, secretKey, { expiresIn: '1h' });
-        res.status(201).json({ message: 'Registration successful', token });
+        res.status(201).json({ message: 'Registration successful', newUser,token });
         connection.close()
     } catch (error) {
         console.log(error);
@@ -66,8 +66,9 @@ app.post("/login", async (req, res) => {
     }
 })
 
-app.post("/forget-password", async (req, res) => {
+app.post("/forget-password", async (req, res) => { 
     try {
+        console.log(req.body)
         const { email } = req.body
         const connection = await MongoClient.connect(URL)
         const db = connection.db("users")
@@ -102,7 +103,7 @@ app.post("/forget-password", async (req, res) => {
                     from: "dnelsona@outlook.com",
                     to: email,
                     subject: "Reset password link",
-                    text: `Click the following link to reset your password: http://reset-password/${token}`
+                    text: `Click the following link to reset your password: http://localhost:5173/reset-password/${token}`
                 });
                 res.status(200).json({ message: "Password reset link sent successfully." });
 

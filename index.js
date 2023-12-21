@@ -8,14 +8,12 @@ const app = express();
 const URL = process.env.DB
 const secretKey = process.env.JWT_SECRET
 const PORT = 4000;
-// const nodemailer = require("nodemailer");
-const sgMail = require('@sendgrid/mail')
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const nodemailer = require("nodemailer");
+
 app.use(express.json());
 app.use(cors({
     origin: '*'
 }));
-
 app.get('/', (req, res) => {
     res.send(`<h1> server checking route </h1>`)
 })
@@ -67,83 +65,52 @@ app.post("/login", async (req, res) => {
     }
 })
 
-app.post("/forget-password", async (req, res) => {
+app.post('/forget-password', async (req, res) => {
     try {
-
-        const { email } = req.body
-        const connection = await MongoClient.connect(URL)
-        const db = connection.db("users")
-        const user = await db.collection("Registered").findOne({ email })
+        const { email } = req.body;
+        const connection = await MongoClient.connect(URL);
+        const db = connection.db('users');
+        const user = await db.collection('Registered').findOne({ email });
 
         if (!user) {
-            res.status(404).json({ message: "User not registered" })
+            res.status(404).json({ message: 'User not registered' });
         }
-        const token = jsonwebtoken.sign({ id: user._id }, secretKey, { expiresIn: '1hr' })
 
-        await db.collection("Registered").updateOne({ email }, {
-            $set: {
-                token
-            }
-        })
-        connection.close()
-        const msg = {
-            to: email, // Change to your recipient
-            from: process.env.mail, // Change to your verified sender
-            subject: 'Sending with SendGrid is Fun',
-            text: 'and easy to do anywhere, even with Node.js',
-            html: `<strong>and easy to do anywhere, even with Node.js</strong>`,
-          }
-          sgMail
-          .send(msg)
-          .then(() => {
-            console.log('Email sent');
-          })
-          .catch((error) => {
-            console.error('SendGrid error:', error);
-        
-            if (error.response) {
-              console.error('SendGrid response:', error.response.status, error.response.data);
-            }
-          });
-        // const transporter = nodemailer.createTransport({
-        //     host: process.env.host,
-        //     port: process.env.SMPT_PORT,
-        //     secure: false,
-        //     auth: {
-        //         user: process.env.mail,
-        //         pass: process.env.OUTLOOK_PASSWORD,
-        //     },
-        //     tls: {
-        //         ciphers: 'SSLv3',
-        //     },
+        const token = jsonwebtoken.sign({ id: user._id }, secretKey, { expiresIn: '1hr' });
 
-        // });
-        // const main = async () => {
-        //     try {
-        //         const info = await transporter.sendMail({
-        //             from: "dnelsona@outlook.com",
-        //             to: email,
-        //             subject: "Reset password link",
-        //             text: `Click the following link to reset your password: http://localhost:5173/reset-password/${token}`
-        //         });
-        //         res.status(200).json({ message: "Password reset link sent successfully." });
+        await db.collection('Registered').updateOne({ email }, {
+            $set: { token }
+        });
 
-        //     } catch (error) {
-        //         console.log(error);
-        //         res.status(500).json({ message: "Failed to send password reset email." });
-        //     }
-        // };
-        // await main();
+        connection.close();
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.mail,
+                pass: process.env.OUTLOOK_PASSWORD,
+            },
+        });
+
+        const info = await transporter.sendMail({
+            from: process.env.mail,
+            to: email,
+            subject: 'Reset password link',
+            text: `Click the following link to reset your password: https://password-reset-flow-vignesh.netlify.app/reset-password/${token}`
+        });
+
+        res.status(200).json({ message: 'Password reset link sent successfully.' });
     } catch (error) {
-        console.log(error)
+        console.log(error);
+        res.status(500).json({ message: 'Failed to send password reset email.' });
     }
-})
+});
 
 app.post("/reset-password/:token", async (req, res) => {
     try {
         const { password, confirmPassword } = req.body
         const token = req.params.token
-        jsonwebtoken.verify(token, secretKey,async (err, decoded) => {
+        jsonwebtoken.verify(token, secretKey, async (err, decoded) => {
             try {
                 if (err) {
                     res.json({
@@ -154,7 +121,7 @@ app.post("/reset-password/:token", async (req, res) => {
                     const connection = await MongoClient.connect(URL)
                     const db = connection.db("users")
                     const user = await db.collection("Registered").findOne({ token: token })
-    
+
                     await db.collection("Registered").updateOne({ token }, {
                         $set: {
                             password: hashedPassword,
@@ -163,7 +130,7 @@ app.post("/reset-password/:token", async (req, res) => {
                     })
                     connection.close()
                     res.send({ message: "Password changed succesfully", user })
-                } 
+                }
             } catch (error) {
                 console.log(error)
             }

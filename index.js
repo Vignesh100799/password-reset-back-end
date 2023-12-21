@@ -12,7 +12,7 @@ const nodemailer = require("nodemailer");
 
 app.use(express.json());
 app.use(cors({
-    origin: '*'
+    origin: 'https://password-reset-flow-vignesh.netlify.app'
 }));
 app.get('/', (req, res) => {
     res.send(`<h1> server checking route </h1>`)

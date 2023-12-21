@@ -88,7 +88,7 @@ app.post("/forget-password", async (req, res) => {
 
         const transporter = nodemailer.createTransport({
             host: process.env.host,
-            port: process.env.PORT,
+            port: process.env.SMPT_PORT,
             secure: false,
             auth: {
                 user: process.env.mail,

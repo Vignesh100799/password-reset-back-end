@@ -10,7 +10,7 @@ const secretKey = process.env.JWT_SECRET
 const PORT = 4000;
 // const nodemailer = require("nodemailer");
 const sgMail = require('@sendgrid/mail')
-
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 app.use(express.json());
 app.use(cors({
     origin: '*'

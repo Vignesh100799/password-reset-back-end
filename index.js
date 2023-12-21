@@ -101,7 +101,7 @@ app.post("/forget-password", async (req, res) => {
         });
         const main = async () => {
             try {
-                const info = transporter.sendMail({
+                const info = await transporter.sendMail({
                     from: "dnelsona@outlook.com",
                     to: email,
                     subject: "Reset password link",

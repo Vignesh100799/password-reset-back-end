@@ -77,7 +77,7 @@ app.post("/forget-password", async (req, res) => {
         if (!user) {
             res.status(404).json({ message: "User not registered" })
         }
-        const token = Math.random().toString(36).substring(7)
+        const token = jsonwebtoken.sign({ id: user._id }, secretKey, { expiresIn: '1hr' })
 
         await db.collection("Registered").updateOne({ email }, {
             $set: {
@@ -124,19 +124,32 @@ app.post("/reset-password/:token", async (req, res) => {
     try {
         const { password, confirmPassword } = req.body
         const token = req.params.token
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const connection = await MongoClient.connect(URL)
-        const db = connection.db("users")
-        const user = await db.collection("Registered").findOne({ token: token })
-
-        await db.collection("Registered").updateOne({ token }, {
-            $set: {
-                password: hashedPassword,
-                confirmPassword: hashedPassword
+        jsonwebtoken.verify(token, secretKey,async (err, decoded) => {
+            try {
+                if (err) {
+                    res.json({
+                        message: "Error with token"
+                    })
+                } else {
+                    const hashedPassword = await bcrypt.hash(password, 10);
+                    const connection = await MongoClient.connect(URL)
+                    const db = connection.db("users")
+                    const user = await db.collection("Registered").findOne({ token: token })
+    
+                    await db.collection("Registered").updateOne({ token }, {
+                        $set: {
+                            password: hashedPassword,
+                            confirmPassword: hashedPassword
+                        }
+                    })
+                    connection.close()
+                    res.send({ message: "Password changed succesfully", user })
+                } 
+            } catch (error) {
+                console.log(error)
             }
         })
-        connection.close()
-        res.send({ message: "Password changed succesfully", user })
+
     } catch (error) {
         console.log(error)
     }

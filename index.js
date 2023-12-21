@@ -94,13 +94,17 @@ app.post("/forget-password", async (req, res) => {
             html: `<strong>and easy to do anywhere, even with Node.js</strong>`,
           }
           sgMail
-            .send(msg)
-            .then(() => {
-              console.log('Email sent')
-            })
-            .catch((error) => {
-              console.error(error)
-            })
+          .send(msg)
+          .then(() => {
+            console.log('Email sent');
+          })
+          .catch((error) => {
+            console.error('SendGrid error:', error);
+        
+            if (error.response) {
+              console.error('SendGrid response:', error.response.status, error.response.data);
+            }
+          });
         // const transporter = nodemailer.createTransport({
         //     host: process.env.host,
         //     port: process.env.SMPT_PORT,

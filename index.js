@@ -8,7 +8,8 @@ const app = express();
 const URL = process.env.DB
 const secretKey = process.env.JWT_SECRET
 const PORT = 4000;
-const nodemailer = require("nodemailer");
+// const nodemailer = require("nodemailer");
+const sgMail = require('@sendgrid/mail')
 
 app.use(express.json());
 app.use(cors({
@@ -85,36 +86,50 @@ app.post("/forget-password", async (req, res) => {
             }
         })
         connection.close()
+        const msg = {
+            to: email, // Change to your recipient
+            from: process.env.mail, // Change to your verified sender
+            subject: 'Sending with SendGrid is Fun',
+            text: 'and easy to do anywhere, even with Node.js',
+            html: `<strong>and easy to do anywhere, even with Node.js</strong>`,
+          }
+          sgMail
+            .send(msg)
+            .then(() => {
+              console.log('Email sent')
+            })
+            .catch((error) => {
+              console.error(error)
+            })
+        // const transporter = nodemailer.createTransport({
+        //     host: process.env.host,
+        //     port: process.env.SMPT_PORT,
+        //     secure: false,
+        //     auth: {
+        //         user: process.env.mail,
+        //         pass: process.env.OUTLOOK_PASSWORD,
+        //     },
+        //     tls: {
+        //         ciphers: 'SSLv3',
+        //     },
 
-        const transporter = nodemailer.createTransport({
-            host: process.env.host,
-            port: process.env.SMPT_PORT,
-            secure: false,
-            auth: {
-                user: process.env.mail,
-                pass: process.env.OUTLOOK_PASSWORD,
-            },
-            tls: {
-                ciphers: 'SSLv3',
-            },
+        // });
+        // const main = async () => {
+        //     try {
+        //         const info = await transporter.sendMail({
+        //             from: "dnelsona@outlook.com",
+        //             to: email,
+        //             subject: "Reset password link",
+        //             text: `Click the following link to reset your password: http://localhost:5173/reset-password/${token}`
+        //         });
+        //         res.status(200).json({ message: "Password reset link sent successfully." });
 
-        });
-        const main = async () => {
-            try {
-                const info = await transporter.sendMail({
-                    from: "dnelsona@outlook.com",
-                    to: email,
-                    subject: "Reset password link",
-                    text: `Click the following link to reset your password: http://localhost:5173/reset-password/${token}`
-                });
-                res.status(200).json({ message: "Password reset link sent successfully." });
-
-            } catch (error) {
-                console.log(error);
-                res.status(500).json({ message: "Failed to send password reset email." });
-            }
-        };
-        await main();
+        //     } catch (error) {
+        //         console.log(error);
+        //         res.status(500).json({ message: "Failed to send password reset email." });
+        //     }
+        // };
+        // await main();
     } catch (error) {
         console.log(error)
     }
